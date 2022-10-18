@@ -33,31 +33,13 @@ def login_view(request):
             return redirect("/admin")
 
         else:
+            
 
-            login_status = login_api(username, password)
+            login_status  = login_api(username, password )
 
             if login_status == 200:
-                user = authenticate(
-                    request, username=username, password=password)
-
-                if not request.user.is_authenticated:
-                    header = {
-                        'Content-Type': 'application/json',
-                        'Application-Key': 'TUdad3354636aacf9e1e7f8954bef241f8dd654708036bf06bf8ae703785b21bc985327cf4b0059571504984688553db30'
-                    }
-                    pull_api = requests.get(
-                        'https://restapi.tu.ac.th/api/v2/profile/std/info/?id='+str(username), headers=header)
-                    data_student = json.loads(pull_api.content).get("data")
-                    first_name, surname = (
-                        data_student["displayname_th"]).split(" ")
-                    email = data_student["email"]
-                    user = User.objects.create_user(username=username,
-                                                    password=password,
-                                                    first_name=first_name,
-                                                    last_name=surname,
-                                                    email=email)
-                    user.save()
-
+                user = authenticate(request, username=username, password=password)
+                
                 if user is not None:
                     login(request, user)
                     return redirect("/")
@@ -75,6 +57,7 @@ def logout_view(request):
     })
 
 
+
 # login with tu api
 def login_api(username, password):
     header = {
@@ -86,5 +69,19 @@ def login_api(username, password):
 
     res = requests.post(
         "https://restapi.tu.ac.th/api/v1/auth/Ad/verify", headers=header, json=body)
-
+ 
+    
+    if res.status_code == 200 :
+        if not User.objects.filter(username=username):
+            pull_api= requests.get('https://restapi.tu.ac.th/api/v2/profile/std/info/?id='+str(username), headers=header)
+            data_student = json.loads(pull_api.content).get("data")
+            first_name  , surname = (data_student["displayname_th"]).split(" ")
+            email = data_student["email"]
+            user = User.objects.create_user(username=username,
+                                            password=password,
+                                            first_name = first_name ,
+                                            last_name = surname,
+                                            email = email)
+            user.save()
     return res.status_code
+    
